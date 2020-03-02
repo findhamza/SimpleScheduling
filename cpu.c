@@ -22,7 +22,7 @@ typedef struct {
 //Function Declaration Sector
 arr2d getTaskInfo(char*);
 void startCPU(arr2d);
-int nextProcess(arr2d, int);
+int nextProcess(arr2d, int, bool);
 int same(const int[], int);
 
 //Global Declaration
@@ -41,8 +41,9 @@ int main()
 	arr2d p_stack = getTaskInfo(fileName);
 
 	for(int i=0; i<100; i++)
-		printf("Arrival: %d\tPriority: %d\tTime: %d\n",
-			p_stack.arr[i][0], p_stack.arr[i][1], p_stack.arr[i][2]);
+		if(p_stack.arr[i][2]!=0)
+			printf("Arrival: %d\tPriority: %d\tTime: %d\n",
+				p_stack.arr[i][0], p_stack.arr[i][1], p_stack.arr[i][2]);
 
 	printf("Total Cycles: %d\n\n", p_stack.mCycle);
 	startCPU(p_stack);
@@ -87,21 +88,28 @@ arr2d getTaskInfo(char *fileName)
 void startCPU(arr2d pStack)
 {
 	pStack.next=0;
-	int robin = 3;
+	int robin = 2;
 	int robinCur = 0;
-	int rr[3];
+	int rr[2];
+	bool flop;
 
 
 	for(int cycle=0; cycle<pStack.mCycle; cycle++)
 	{
-		pStack.next = nextProcess(pStack, cycle);
 
-		if(same(rr,robin))
+
+		if(same(rr,robin)==0 || robinCur==0)
 		{
-//			pStack.next++;
-			pStack.next = nextProcess(pStack, cycle);
+			printf("ROUND ROBIN: %d %d\n\n", rr[0], rr[1]);
+//nah			rr[0] = DONE;
+			pStack.next = nextProcess(pStack, cycle, false);//true);
+			flop=true;
 		}
-
+		else
+		{
+			pStack.next = nextProcess(pStack, cycle, true);//false);
+			flop=false;
+		}
 		pStack.arr[pStack.next][2]--;
 		if(pStack.arr[pStack.next][2]<=0)
 			pStack.arr[pStack.next][1] = DONE;
@@ -110,21 +118,29 @@ void startCPU(arr2d pStack)
 		robinCur++;
 		if(robinCur>=robin){robinCur=0;}
 
-//		printf("%d :: %d\n",rr[0],rr[1]);
+//		if(same(rr,robin)!=0){flop=false;}
 
-		printf("Cycle: %d\tProcess: %d\tRemaining: %d\n", cycle, pStack.next, pStack.arr[pStack.next][2]);
+		printf("%d :: %d\n",rr[0],rr[1]);
+
+		printf("Cycle: %d\tProcess: %d\tRemaining: %d\tFlop: %d\n", cycle, pStack.next, pStack.arr[pStack.next][2], flop);
 	}
 }
 
-int nextProcess(arr2d pStack, int cycle)
+int nextProcess(arr2d pStack, int cycle, bool flop)
 {
 	int next = pStack.next;
+	int index;
 
 	for(int i=0; i<cycle; i++)
 	{
-		if(pStack.arr[i][2]>0 && pStack.arr[i][0]<=cycle)
-			if(pStack.arr[i][1]<pStack.arr[next][1])
-				next = i;
+		if(flop)
+			index = (i + next) % cycle;
+		if(!flop)
+			index = i;
+
+		if(pStack.arr[index][2]>0 && pStack.arr[index][0]<=cycle)
+			if(pStack.arr[index][1]<=pStack.arr[next][1])
+				next = index;
 			else
 				continue;
 	}
