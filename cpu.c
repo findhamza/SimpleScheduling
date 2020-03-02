@@ -91,36 +91,32 @@ void startCPU(arr2d pStack)
 	int robin = 2;
 	int robinCur = 0;
 	int rr[2];
-	bool flop;
+	bool flop=false;
 
 
 	for(int cycle=0; cycle<pStack.mCycle; cycle++)
 	{
+		rr[robinCur] = pStack.next;
 
 
-		if(same(rr,robin)==0 || robinCur==0)
-		{
-			printf("ROUND ROBIN: %d %d\n\n", rr[0], rr[1]);
-//nah			rr[0] = DONE;
-			pStack.next = nextProcess(pStack, cycle, false);//true);
-			flop=true;
-		}
-		else
-		{
-			pStack.next = nextProcess(pStack, cycle, true);//false);
-			flop=false;
-		}
+		pStack.next = nextProcess(pStack, cycle, flop);
+
+		if(pStack.arr[pStack.next][1] == pStack.arr[rr[robinCur]][1] && robinCur!=0)
+			if(pStack.arr[rr[robinCur]][2]>0)
+			{
+				pStack.next = rr[robinCur];
+//				printf("No Switch\n");
+			}
+
 		pStack.arr[pStack.next][2]--;
 		if(pStack.arr[pStack.next][2]<=0)
 			pStack.arr[pStack.next][1] = DONE;
 
-		rr[robinCur] = pStack.next;
 		robinCur++;
 		if(robinCur>=robin){robinCur=0;}
-
 //		if(same(rr,robin)!=0){flop=false;}
 
-		printf("%d :: %d\n",rr[0],rr[1]);
+//		printf("%d :: %d\n",rr[0],rr[1]);
 
 		printf("Cycle: %d\tProcess: %d\tRemaining: %d\tFlop: %d\n", cycle, pStack.next, pStack.arr[pStack.next][2], flop);
 	}
