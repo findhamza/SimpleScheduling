@@ -16,6 +16,8 @@ typedef struct {
 	int arr[100][3];
 	int mCycle;
 	int next;
+	int pTime[100];
+	int quant;
 } arr2d;
 
 
@@ -24,6 +26,7 @@ arr2d getTaskInfo(char*);
 void startCPU(arr2d);
 int nextProcess(arr2d, int, bool);
 int same(const int[], int);
+void turnAround(arr2d);
 
 //Global Declaration
 #define DONE 999
@@ -31,14 +34,20 @@ int same(const int[], int);
 int main()
 {
 	char *fileName = malloc(256);
+	int quantum = 0;
 
 	printf(":::Preemtive Priority Scheduler:::\n\n");
 	printf("Please enter file name: ");
 
 	scanf("%255s", fileName);
-	printf("\nFile is: %s\n\n", fileName);
+	printf("Please enter Quantum: ");
+	scanf("%d", &quantum);
+
+	printf("\nFile is: %s\n", fileName);
+	printf("Quantum: %d\n\n", quantum);
 
 	arr2d p_stack = getTaskInfo(fileName);
+	p_stack.quant = quantum;
 
 	for(int i=0; i<100; i++)
 		if(p_stack.arr[i][2]!=0)
@@ -63,10 +72,10 @@ arr2d getTaskInfo(char *fileName)
 	while(!feof(file))
 	{
 		fscanf(file, "%d", &num);
-		printf("\n%d", num);
+//		printf("\n%d", num);
 		info.arr[r][c] = num;
 		if(c==2){info.mCycle+=info.arr[r][c];}
-		printf("Total Cycles: %d\n\n", info.mCycle);
+//		printf("Total Cycles: %d\n\n", info.mCycle);
 		c++;
 
 		if(c>=3){c=0; r++;}
@@ -88,9 +97,9 @@ arr2d getTaskInfo(char *fileName)
 void startCPU(arr2d pStack)
 {
 	pStack.next=0;
-	int robin = 2;
+	int robin = pStack.quant;
 	int robinCur = 0;
-	int rr[2];
+	int rr[robin];
 	bool flop=false;
 
 
@@ -99,18 +108,32 @@ void startCPU(arr2d pStack)
 		rr[robinCur] = pStack.next;
 
 
-		pStack.next = nextProcess(pStack, cycle, flop);
+		pStack.next = nextProcess(pStack, cycle, true);//flop);
 
 		if(pStack.arr[pStack.next][1] == pStack.arr[rr[robinCur]][1] && robinCur!=0)
+		{
 			if(pStack.arr[rr[robinCur]][2]>0)
 			{
-				pStack.next = rr[robinCur];
+//				pStack.next = rr[robinCur];
+				pStack.next = nextProcess(pStack, cycle, false);
 //				printf("No Switch\n");
+				robinCur = -1;
 			}
+		}
+		else
+		{
+			pStack.next = 0;
+			pStack.next = nextProcess(pStack, cycle, true);//true);
+//			printf("Swtich\n");
+		}
 
 		pStack.arr[pStack.next][2]--;
 		if(pStack.arr[pStack.next][2]<=0)
+		{
 			pStack.arr[pStack.next][1] = DONE;
+
+			pStack.pTime[pStack.next] = cycle-pStack.arr[pStack.next][0];
+		}
 
 		robinCur++;
 		if(robinCur>=robin){robinCur=0;}
@@ -120,6 +143,8 @@ void startCPU(arr2d pStack)
 
 		printf("Cycle: %d\tProcess: %d\tRemaining: %d\tFlop: %d\n", cycle, pStack.next, pStack.arr[pStack.next][2], flop);
 	}
+
+	turnAround(pStack);
 }
 
 int nextProcess(arr2d pStack, int cycle, bool flop)
@@ -136,7 +161,9 @@ int nextProcess(arr2d pStack, int cycle, bool flop)
 
 		if(pStack.arr[index][2]>0 && pStack.arr[index][0]<=cycle)
 			if(pStack.arr[index][1]<=pStack.arr[next][1])
+			{
 				next = index;
+			}
 			else
 				continue;
 	}
@@ -148,4 +175,25 @@ int same(const int a[], int n)
 {
 	while(--n>0 && a[n]==a[0]);
 	return n!=0;
+}
+
+void turnAround(arr2d pStack)
+{
+	printf("\nTurnaround Time\n");
+
+	float avg = 0;
+
+	for(int i=0; i<100; i++)
+		if(pStack.arr[i][0] == pStack.arr[i][1] == pStack.arr[i][2] != 0)
+		{
+			printf("Process[%d]: %d\n", i, pStack.pTime[i]);
+			avg+=pStack.pTime[i];
+		}
+		else
+		{
+			avg/=i--;
+			break;
+		}
+
+	printf("\nAverage: %lf\n\n",avg);
 }
